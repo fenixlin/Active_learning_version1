@@ -48,7 +48,7 @@ class Database(object):
             #XXX: seems not necessary to dump
             #self._dump_rating_list(self.home_dir+dump_file)
 
-    def make_train_test_matrix(self, train_test_ratio = 0.8):
+    def make_train_test_matrix(self, train_test_ratio = 0.8, backup = True):
         #XXX: merge into load_data()?
         self.train_matrix, self.train_item_id_of_col, _ = \
             self._extract_rating_matrix( \
@@ -57,21 +57,21 @@ class Database(object):
             self._extract_rating_matrix( \
             self._filtered_rating_list(int(self.ITEM_NUM*train_test_ratio)+1, self.ITEM_NUM-1))
 
-    def add_negative_data(self, source='both', addAllUsers=False):
-        #merge into load_data so that we can just dump it?
-        """if this is test data for binary classification, then you should choose addAllUsers """
-        if source == 'train' or source == 'both':
-            self.train_matrix = self._add_neg_to_matrix(self.train_matrix, addAllUsers)
-        if source == 'test' or source == 'both':
-            self.test_matrix = self._add_neg_to_matrix(self.test_matrix, addAllUsers)
-
-    def dump_libfm_data(self, train_file=None, test_file=None, shuffle=True, omit_item=True):
+    def dump_libfm_data(self, train_file=None, test_file=None, add_negative=False, binary=False, shuffle=True, omit_item=True):
         # output libfm format data from rating matrix
         # [rating item attribute] if omit_item==False, [rating attribute] if omit_item==True
+        if add_negative:
+            #XXX: do not actually addAllUsers and just output it to save time?
+            train_matrix = self._add_neg_to_matrix(self.train_matrix.copy())
+            test_matrix = self._add_neg_to_matrix(self.test_matrix.copy(), addAllUsers=True)
+        else:
+            train_matrix = self.train_matrix
+            test_matrix = self.test_matrix
+
         if train_file!=None:
-            self._dump_matrix_to_libfm_file(self.home_dir+train_file, self.train_matrix, self.train_item_id_of_col, shuffle, omit_item)
+            self._dump_matrix_to_libfm_file(self.home_dir+train_file, train_matrix, self.train_item_id_of_col, binary, shuffle, omit_item)
         if test_file!=None:
-            self._dump_matrix_to_libfm_file(self.home_dir+test_file, self.test_matrix, self.test_item_id_of_col, shuffle, omit_item)
+            self._dump_matrix_to_libfm_file(self.home_dir+test_file, test_matrix, self.test_item_id_of_col, binary, shuffle, omit_item)
 
     def load_prediction_list(self, pred_file, task, threshold=0.5):
         #TODO: merge accuracy and regression error calculation inside.
@@ -124,7 +124,7 @@ class Database(object):
         print count,"negative rating added in total."
         return matrix
 
-    def _dump_matrix_to_libfm_file(self, filename, matrix, item_id_of_col, shuffle=True, omit_item=False):
+    def _dump_matrix_to_libfm_file(self, filename, matrix, item_id_of_col, binary, shuffle=True, omit_item=False):
         row, col = matrix.nonzero()
         height, width = matrix.get_shape()
         index = range(len(row))
@@ -139,6 +139,8 @@ class Database(object):
             #assign neg rating to -1 just for storing, output in file will be 0
             if rating < 0:
                 rating = 0
+            if binary and rating>0:
+                rating = 1
             libfm_file.write(str(rating)+' '+str(x)+':1')
             filled_num = height 
             if not omit_item:
