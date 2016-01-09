@@ -73,7 +73,7 @@ class Database(object):
         if test_file!=None:
             self._dump_matrix_to_libfm_file(self.home_dir+test_file, test_matrix, self.test_item_id_of_col, binary, shuffle, omit_item)
 
-    def load_prediction_list(self, pred_file, task, threshold=0.5):
+    def load_pred_list(self, pred_file, task, threshold=0.5):
         #TODO: merge accuracy and regression error calculation inside.
         if task!='c' and task!='r':
             raise ValueError("task should be r(regression) or c(classification)")
@@ -84,7 +84,7 @@ class Database(object):
             pred = f.readline().strip()
             if task=='c':
                 pred = pred>threshold
-            result.append([row[i]. col[i]. pred])
+            result.append([row[i], col[i], pred])
         f.close()
         return result
 
