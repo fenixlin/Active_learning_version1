@@ -122,6 +122,12 @@ class MLParser(Parser):
     def extract_rating_list(self, sort_data):
         rating_list = []
         self.item_num_of_id = dict()
+        for values in self.item_info:
+            if self.item_num_of_id.has_key(values[0]):
+                itemID = self.item_num_of_id[values[0]]
+            else:
+                itemID = len(self.item_num_of_id)
+                self.item_num_of_id[values[0]] = len(self.item_num_of_id)
         for record in self.rating_data:
             rating_list.append(self._parse_line(record))
         if sort_data:
@@ -141,12 +147,12 @@ class MLParser(Parser):
             itemID = self.item_num_of_id[values[1]]
         else:
             itemID = len(self.item_num_of_id)
-            self.item_num_of_id[values[1]] = len(self.item_num_of_id)
+            self.item_num_of_id[values[1]] = len(self.item_num_of_id) #XXX: they have no item attr!
         rating = float(values[2])
         commentDate = values[3]
         result = [userID, itemID, rating, commentDate]
         if self.item_info!=None:
-            result.extend(self._get_item_info(itemID)) #XXX: item_info is query by num actually
+            result.extend(self._get_item_info(itemID))
         if self.user_info!=None:
             result.extend(self._get_user_info(userID))
         return result
