@@ -4,7 +4,8 @@ from libfm import LibFM
 
 def sample_exp():
     # making data from origin format to libfm format
-    db = Database('movielens', 718, 8928, 'ratings.csv', 'movies.attr')
+    #db = Database('movielens', 718, 8928, 'ratings.csv', 'movies.attr')
+    db = Database('amazon', 1000, 5000, 'cands_book.rating', 'cands_book.item')
     db.load_data()
     db.make_train_test_matrix()
     libfm = LibFM()

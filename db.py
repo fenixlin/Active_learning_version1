@@ -5,7 +5,7 @@ import cPickle
 import random
 import numpy as np
 import scipy.sparse as sp
-from parser import MLParser
+from parser import MLParser, AmazonParser
 
 class Database(object):
 
@@ -55,7 +55,7 @@ class Database(object):
             self._filtered_rating_list(0, int(self.ITEM_NUM*train_test_ratio)))
         self.test_matrix, self.test_item_id_of_col, _ = \
             self._extract_rating_matrix( \
-            self._filtered_rating_list(int(self.ITEM_NUM*train_test_ratio)+1, self.ITEM_NUM-1))
+            self._filtered_rating_list(int(self.ITEM_NUM*train_test_ratio), self.ITEM_NUM))
 
     def dump_libfm_data(self, train_file=None, test_file=None, add_negative=False, binary=False, shuffle=True, omit_item=True):
         # output libfm format data from rating matrix
@@ -162,7 +162,7 @@ class Database(object):
             if not item_num_of_id.has_key(itemID):
                 item_num_of_id[itemID] = len(item_num_of_id)
             item_num = item_num_of_id[itemID]
-            if item_num>=head_item_count and item_num<=tail_item_count:
+            if item_num>=head_item_count and item_num<tail_item_count:
                 yield values
 
     def _extract_rating_matrix(self, rating_list):
@@ -171,13 +171,13 @@ class Database(object):
         col_num_of_item = [-1 for i in range(self.ITEM_NUM)] # we may not have all items, so compression is needed
         item_id_of_col = []
         rating_matrix = np.zeros([self.USER_NUM, self.ITEM_NUM])
-        item_count = -1
+        item_count = 0
         for values in rating_list:
             userID = values[0]
             itemID = values[1]
             if col_num_of_item[itemID] < 0:
                 item_count += 1
-                col_num_of_item[itemID] = item_count
+                col_num_of_item[itemID] = item_count-1
                 item_id_of_col.append(itemID)
             rating = values[2]
             rating_matrix[userID, col_num_of_item[itemID]] = rating
