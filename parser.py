@@ -223,7 +223,7 @@ class AmazonParser(Parser):
             rating_list = self._sort_rating_list(rating_list, [4, 1, 0]) #XXX: better place to specify?
         return rating_list
 
-    def extract_attr_list(self):
+    def extract_attr_list(self, ignore=('Title')):
         if self.item_info == None:
             return None
         dict_name = list()
@@ -232,29 +232,32 @@ class AmazonParser(Parser):
             cur_key = 1
             while cur_key<len(info):
                 dict_key = info[cur_key]
-                value = info[cur_key+1]
-                try:
-                    kid = dict_name.index(dict_key)
-                    if not dict_list[kid].has_key(value):
-                        dict_list[kid][value] = len(dict_list[kid])
-                except:
-                    dict_name.append(dict_key)
-                    kid = len(dict_name)-1
-                    dict_list.append(dict())
-                    dict_list[kid][value] = 0
+                if dict_key not in ignore:
+                    value = info[cur_key+1]
+                    try:
+                        kid = dict_name.index(dict_key)
+                        if not dict_list[kid].has_key(value):
+                            dict_list[kid][value] = len(dict_list[kid])
+                    except:
+                        dict_name.append(dict_key)
+                        kid = len(dict_name)-1
+                        dict_list.append(dict())
+                        dict_list[kid][value] = 0
                 cur_key += 2
         bias = [0 for i in range(len(dict_name))]
         for i in range(1,len(bias)):
             bias[i] = bias[i-1]+len(dict_list[i-1])
+
         attribute_list = []
         for info in self.item_info:
             tmp = []
             cur_key = 1
             while cur_key<len(info):
                 dict_key = info[cur_key]
-                value = info[cur_key+1]
-                kid = dict_name.index(dict_key)
-                tmp.append(dict_list[kid][value]+bias[kid])
+                if dict_key not in ignore:
+                    value = info[cur_key+1]
+                    kid = dict_name.index(dict_key)
+                    tmp.append(dict_list[kid][value]+bias[kid])
                 cur_key += 2
             attribute_list.append(tmp)
         return attribute_list
